@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bob Finance — Headcount Plan vs. Actual</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --green: #1D9E75;
+    --green-light: #E1F5EE;
+    --green-dark: #0F6E56;
+    --blue: #185FA5;
+    --blue-light: #E6F1FB;
+    --blue-mid: #B5D4F4;
+    --amber: #EF9F27;
+    --amber-light: #FAEEDA;
+    --amber-dark: #854F0B;
+    --red: #E24B4A;
+    --red-light: #FCEBEB;
+    --red-dark: #A32D2D;
+    --gray-50: #F8F8F7;
+    --gray-100: #F0EFEB;
+    --gray-200: #E0DED8;
+    --gray-400: #9E9C96;
+    --gray-600: #5F5E5A;
+    --gray-900: #1A1A18;
+    --text-primary: #1A1A18;
+    --text-secondary: #5F5E5A;
+    --text-muted: #9E9C96;
+    --border: #E0DED8;
+    --surface: #FFFFFF;
+    --bg: #F8F8F7;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  html { font-size: 15px; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  /* ── Header ── */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-left { display: flex; align-items: center; gap: 10px; }
+  .bob-logo {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 15px; font-weight: 600; color: var(--text-primary);
+  }
+  .bob-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--green);
+  }
+  .header-divider {
+    width: 1px; height: 18px; background: var(--border);
+  }
+  .header-section {
+    font-size: 13px; color: var(--text-secondary); font-weight: 400;
+  }
+  .header-badge {
+    font-size: 11px; font-weight: 500;
+    background: var(--blue-light); color: var(--blue);
+    padding: 3px 10px; border-radius: 20px;
+  }
+
+  /* ── Layout ── */
+  .container { max-width: 1040px; margin: 0 auto; padding: 32px 24px; }
+
+  /* ── Page title block ── */
+  .page-title { margin-bottom: 28px; }
+  .page-title h1 { font-size: 22px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+  .page-title p { font-size: 13px; color: var(--text-secondary); }
+
+  /* ── Toolbar ── */
+  .toolbar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px; flex-wrap: wrap; gap: 10px;
+  }
+  .filter-group { display: flex; gap: 8px; }
+  select {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px; font-weight: 400;
+    padding: 7px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text-primary);
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%239E9C96' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 28px;
+  }
+  select:focus { outline: none; border-color: var(--blue); }
+
+  /* ── KPI cards ── */
+  .kpi-grid {
+    display: grid; grid-template-columns: repeat(4, minmax(0,1fr));
+    gap: 12px; margin-bottom: 24px;
+  }
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+  }
+  .kpi-label { font-size: 11px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+  .kpi-value { font-size: 24px; font-weight: 600; color: var(--text-primary); line-height: 1; }
+  .kpi-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+  .kpi-delta { font-size: 12px; font-weight: 500; margin-top: 6px; display: flex; align-items: center; gap: 4px; }
+  .delta-over { color: var(--red); }
+  .delta-under { color: var(--green); }
+  .delta-neutral { color: var(--text-muted); }
+
+  /* ── Tabs ── */
+  .tabs { display: flex; gap: 2px; margin-bottom: 16px; border-bottom: 1px solid var(--border); }
+  .tab {
+    font-size: 13px; font-weight: 400; color: var(--text-secondary);
+    padding: 10px 16px; cursor: pointer; border-bottom: 2px solid transparent;
+    margin-bottom: -1px; transition: color 0.15s;
+  }
+  .tab:hover { color: var(--text-primary); }
+  .tab.active { color: var(--text-primary); font-weight: 500; border-bottom-color: var(--text-primary); }
+
+  /* ── Table ── */
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead tr { background: var(--gray-50); }
+  th {
+    text-align: left; padding: 10px 16px;
+    font-size: 11px; font-weight: 500; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  td { padding: 12px 16px; border-bottom: 1px solid var(--border); color: var(--text-primary); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--gray-50); }
+
+  .dept-name { font-weight: 500; }
+  .mono { font-family: 'DM Mono', monospace; font-size: 12px; }
+
+  /* ── Bar ── */
+  .bar-track { height: 5px; background: var(--gray-100); border-radius: 3px; width: 72px; overflow: hidden; }
+  .bar-fill { height: 5px; border-radius: 3px; }
+  .bar-green { background: var(--green); }
+  .bar-amber { background: var(--amber); }
+  .bar-red { background: var(--red); }
+  .cost-cell { display: flex; align-items: center; gap: 10px; }
+
+  /* ── Badge ── */
+  .badge {
+    font-size: 11px; font-weight: 500;
+    padding: 3px 9px; border-radius: 20px;
+    display: inline-block; white-space: nowrap;
+  }
+  .badge-green { background: var(--green-light); color: var(--green-dark); }
+  .badge-amber { background: var(--amber-light); color: var(--amber-dark); }
+  .badge-red { background: var(--red-light); color: var(--red-dark); }
+
+  .var-over { color: var(--red); font-weight: 500; font-family: 'DM Mono', monospace; font-size: 12px; }
+  .var-under { color: var(--green); font-weight: 500; font-family: 'DM Mono', monospace; font-size: 12px; }
+  .var-neutral { color: var(--text-muted); font-family: 'DM Mono', monospace; font-size: 12px; }
+
+  /* ── Benchmark ── */
+  .bench-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+  }
+  .bench-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 24px;
+  }
+  .bench-peer-tag {
+    font-size: 12px; color: var(--text-secondary);
+  }
+  .bench-peer-tag strong { color: var(--text-primary); }
+  .bench-row { display: flex; align-items: center; gap: 16px; margin-bottom: 18px; }
+  .bench-row:last-of-type { margin-bottom: 0; }
+  .bench-label { font-size: 13px; color: var(--text-secondary); width: 200px; flex-shrink: 0; }
+  .bench-track { flex: 1; height: 8px; background: var(--gray-100); border-radius: 4px; position: relative; }
+  .bench-peer-bar { height: 8px; border-radius: 4px; background: var(--blue-mid); }
+  .bench-you { position: absolute; top: -3px; width: 3px; height: 14px; background: var(--blue); border-radius: 2px; }
+  .bench-vals { font-size: 12px; font-family: 'DM Mono', monospace; width: 80px; text-align: right; flex-shrink: 0; }
+  .bench-legend {
+    display: flex; gap: 20px; margin-top: 20px; padding-top: 16px;
+    border-top: 1px solid var(--border);
+    font-size: 11px; color: var(--text-muted);
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-peer { width: 20px; height: 6px; background: var(--blue-mid); border-radius: 3px; }
+  .legend-you { width: 3px; height: 12px; background: var(--blue); border-radius: 2px; }
+
+  /* ── Insight box ── */
+  .insight {
+    margin-top: 20px;
+    background: var(--blue-light);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    display: flex; gap: 12px; align-items: flex-start;
+  }
+  .insight-icon {
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--blue); color: white;
+    font-size: 11px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 1px;
+  }
+  .insight-text { font-size: 13px; color: #0C447C; line-height: 1.6; }
+  .insight-text strong { font-weight: 600; }
+
+  /* ── Pitch section ── */
+  .pitch {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px 32px;
+    margin-bottom: 32px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0,1fr));
+    gap: 0;
+  }
+  .pitch-block {
+    padding: 0 28px 0 0;
+    margin: 0 28px 0 0;
+    border-right: 1px solid var(--border);
+  }
+  .pitch-block:last-child {
+    border-right: none;
+    padding-right: 0;
+    margin-right: 0;
+  }
+  .pitch-block:not(:first-child) {
+    padding-left: 28px;
+  }
+  .pitch-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+  .pitch-label.pain { color: var(--red-dark); }
+  .pitch-label.solution { color: var(--green-dark); }
+  .pitch-label.kpi { color: var(--blue); }
+  .pitch-text {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+  }
+  .pitch-text strong { color: var(--text-primary); font-weight: 500; }
+  .pitch-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .pitch-list li {
+    background: var(--gray-50);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+  }
+  .pitch-list li strong {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+  }
+  .pitch-list li span {
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+  .pitch-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 20px 0 16px;
+  }
+  .pitch-byline {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+  .pitch-byline strong { color: var(--text-secondary); font-weight: 500; }
+  @media (max-width: 640px) {
+    .pitch { grid-template-columns: 1fr; gap: 20px; }
+    .pitch-block { border-right: none; border-bottom: 1px solid var(--border); padding: 0 0 20px 0; margin: 0; }
+    .pitch-block:last-child { border-bottom: none; padding-bottom: 0; }
+    .pitch-block:not(:first-child) { padding-left: 0; }
+  }
+
+  /* ── Footer note ── */
+  .footer-note {
+    margin-top: 32px; padding-top: 20px;
+    border-top: 1px solid var(--border);
+    display: flex; align-items: flex-start; gap: 16px;
+  }
+  .footer-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--blue-light);
+    color: var(--blue); font-size: 13px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .footer-text { font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+  .footer-text strong { color: var(--text-primary); font-weight: 500; }
+
+  @media (max-width: 640px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .bench-label { width: 130px; }
+    .container { padding: 20px 16px; }
+    .header { padding: 0 16px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-left">
+    <div class="bob-logo">
+      <div class="bob-dot"></div>
+      Bob Finance
+    </div>
+    <div class="header-divider"></div>
+    <span class="header-section">Headcount Plan vs. Actual</span>
+  </div>
+  <div class="header-badge">Concept · 2026 Roadmap</div>
+</header>
+
+<div class="container">
+
+  <div class="page-title">
+    <h1>Headcount Plan vs. Actual</h1>
+    <p>Real-time variance between your workforce plan and HR reality — with peer benchmarking powered by the Bob dataset.</p>
+  </div>
+
+  <div class="pitch">
+    <div class="pitch-block">
+      <div class="pitch-label pain">The pain</div>
+      <p class="pitch-text">Finance builds hiring plans in spreadsheets. HR lives in Bob. When a hire slips, a band changes, or a backfill opens — <strong>the financial model is instantly stale.</strong> FP&amp;A spends 2–4 days every month manually reconciling HR reality with their plan.</p>
+    </div>
+    <div class="pitch-block">
+      <div class="pitch-label solution">The solution</div>
+      <p class="pitch-text">A live Headcount Plan vs. Actual layer inside Bob Finance — sliceable by department, cost center, and role — with a <strong>benchmark overlay powered by HiBob's 4,400+ company dataset.</strong> FP&amp;A and HR share one plan, one source of truth. No exports, no email chains.</p>
+    </div>
+    <div class="pitch-block">
+      <div class="pitch-label kpi">What I'd measure</div>
+      <ul class="pitch-list">
+        <li><strong>Time-to-reconcile</strong><span>Hours Finance spends aligning HC data with HR — target: ~3 days → same-day</span></li>
+        <li><strong>Forecast accuracy</strong><span>Plan vs. actual headcount cost variance at quarter close — target: &lt;3%</span></li>
+        <li><strong>Benchmark engagement</strong><span>% of Finance users acting on a peer insight within 30 days</span></li>
+      </ul>
+    </div>
+    <hr class="pitch-divider" style="grid-column:1/-1">
+    <div style="grid-column:1/-1">
+      <p class="pitch-byline">Built by <strong>Shir</strong> · PM candidate, Bob Finance – Headcount Modeling · Inspired by a BVA reporting product shipped at Tipalti: budget vs. actual spend tracking with department-level breakdowns and peer benchmarking by industry profile — the same pattern applied to the HR–Finance seam the HiBob + Mosaic acquisition was built to close.</p>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <div class="filter-group">
+      <select id="period-sel" onchange="render()">
+        <option value="q1">Q1 2025</option>
+        <option value="q2" selected>Q2 2025</option>
+        <option value="q3">Q3 2025</option>
+      </select>
+      <select id="dept-sel" onchange="render()">
+        <option value="all">All departments</option>
+        <option value="eng">Engineering</option>
+        <option value="sales">Sales</option>
+        <option value="gna">G&A</option>
+        <option value="mkt">Marketing</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="kpi-grid" id="kpis"></div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="setTab('dept', this)">By department</div>
+    <div class="tab" onclick="setTab('role', this)">By role</div>
+    <div class="tab" onclick="setTab('bench', this)">Peer benchmarks</div>
+  </div>
+
+  <!-- Dept view -->
+  <div id="view-dept">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Department</th>
+            <th>Planned HC</th>
+            <th>Actual HC</th>
+            <th>Planned cost</th>
+            <th>Actual cost</th>
+            <th>Variance</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="dept-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Role view -->
+  <div id="view-role" style="display:none">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Role</th>
+            <th>Department</th>
+            <th>Start (plan)</th>
+            <th>Start (actual)</th>
+            <th>Comp (plan)</th>
+            <th>Comp (actual)</th>
+            <th>Variance</th>
+          </tr>
+        </thead>
+        <tbody id="role-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Benchmark view -->
+  <div id="view-bench" style="display:none">
+    <div class="bench-card">
+      <div class="bench-header">
+        <div class="bench-peer-tag">
+          Peer group: B2B SaaS · 200–500 employees · Series C–D &nbsp;·&nbsp; <strong>47 companies</strong>
+        </div>
+        <span class="badge badge-green">Bob dataset</span>
+      </div>
+
+      <div class="bench-row">
+        <div class="bench-label">Sales HC as % of total</div>
+        <div class="bench-track">
+          <div class="bench-peer-bar" style="width:52%"></div>
+          <div class="bench-you" style="left:66%"></div>
+        </div>
+        <div class="bench-vals" style="color:var(--red)">28% <span style="color:var(--text-muted);font-weight:400">/ 22%</span></div>
+      </div>
+
+      <div class="bench-row">
+        <div class="bench-label">Eng IC : manager ratio</div>
+        <div class="bench-track">
+          <div class="bench-peer-bar" style="width:60%"></div>
+          <div class="bench-you" style="left:45%"></div>
+        </div>
+        <div class="bench-vals" style="color:var(--green)">6:1 <span style="color:var(--text-muted);font-weight:400">/ 8:1</span></div>
+      </div>
+
+      <div class="bench-row">
+        <div class="bench-label">Headcount cost / ARR</div>
+        <div class="bench-track">
+          <div class="bench-peer-bar" style="width:50%"></div>
+          <div class="bench-you" style="left:57%"></div>
+        </div>
+        <div class="bench-vals" style="color:var(--amber)">34% <span style="color:var(--text-muted);font-weight:400">/ 30%</span></div>
+      </div>
+
+      <div class="bench-row">
+        <div class="bench-label">Avg time-to-fill (days)</div>
+        <div class="bench-track">
+          <div class="bench-peer-bar" style="width:55%"></div>
+          <div class="bench-you" style="left:70%"></div>
+        </div>
+        <div class="bench-vals" style="color:var(--red)">62d <span style="color:var(--text-muted);font-weight:400">/ 45d</span></div>
+      </div>
+
+      <div class="bench-legend">
+        <div class="legend-item"><div class="legend-peer"></div> Peer median range</div>
+        <div class="legend-item"><div class="legend-you"></div> Your company</div>
+      </div>
+
+      <div class="insight">
+        <div class="insight-icon">AI</div>
+        <div class="insight-text">
+          <strong>Insight:</strong> Your Sales headcount is 6pp above peer median and time-to-fill is 38% longer than peers. Consider front-loading Sales hires in Q3 to close the productivity gap before year-end. Peer companies with similar ratios reduced time-to-fill by an average of 18 days by shifting to structured panel interviews.
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+</div>
+
+<script>
+const periodData = {
+  q1: { depts: [
+    {name:'Engineering', planned:42, actual:40, pCost:4200000, aCost:4050000},
+    {name:'Sales',       planned:28, actual:31, pCost:2800000, aCost:3150000},
+    {name:'G&A',         planned:14, actual:14, pCost:1100000, aCost:1110000},
+    {name:'Marketing',   planned:12, actual:11, pCost:900000,  aCost:840000},
+  ]},
+  q2: { depts: [
+    {name:'Engineering', planned:46, actual:43, pCost:4600000, aCost:4320000},
+    {name:'Sales',       planned:32, actual:37, pCost:3200000, aCost:3750000},
+    {name:'G&A',         planned:15, actual:15, pCost:1150000, aCost:1155000},
+    {name:'Marketing',   planned:14, actual:12, pCost:1050000, aCost:910000},
+  ]},
+  q3: { depts: [
+    {name:'Engineering', planned:50, actual:47, pCost:5000000, aCost:4700000},
+    {name:'Sales',       planned:38, actual:41, pCost:3800000, aCost:4150000},
+    {name:'G&A',         planned:16, actual:16, pCost:1200000, aCost:1210000},
+    {name:'Marketing',   planned:16, actual:14, pCost:1200000, aCost:1060000},
+  ]}
+};
+
+const roles = [
+  {role:'Senior SWE',      dept:'Engineering', ps:'Jan 15', as:'Jan 22', pc:'$160k', ac:'$165k', v:'+$5k',  vc:'over'},
+  {role:'Account Executive',dept:'Sales',      ps:'Feb 1',  as:'Mar 10', pc:'$120k', ac:'$128k', v:'+$8k',  vc:'over'},
+  {role:'Staff SWE',       dept:'Engineering', ps:'Mar 1',  as:'Mar 1',  pc:'$185k', ac:'$185k', v:'—',     vc:'neutral'},
+  {role:'SDR',             dept:'Sales',       ps:'Feb 15', as:'Feb 15', pc:'$70k',  ac:'$72k',  v:'+$2k',  vc:'over'},
+  {role:'FP&A Analyst',    dept:'G&A',         ps:'Jan 10', as:'Jan 10', pc:'$95k',  ac:'$95k',  v:'—',     vc:'neutral'},
+  {role:'Content Marketer',dept:'Marketing',   ps:'Mar 1',  as:'—',      pc:'$90k',  ac:'—',     v:'Open',  vc:'open'},
+];
+
+function fmt(n) { return '$' + (n/1000000).toFixed(2) + 'M'; }
+function pct(a,b) { return Math.round(((a-b)/b)*100); }
+
+function render() {
+  const period = document.getElementById('period-sel').value;
+  const deptFilter = document.getElementById('dept-sel').value;
+
+  let depts = periodData[period].depts;
+  if (deptFilter !== 'all') {
+    const map = {eng:'Engineering', sales:'Sales', gna:'G&A', mkt:'Marketing'};
+    depts = depts.filter(d => d.name === map[deptFilter]);
+  }
+
+  const tPHC  = depts.reduce((s,d)=>s+d.planned,0);
+  const tAHC  = depts.reduce((s,d)=>s+d.actual,0);
+  const tPC   = depts.reduce((s,d)=>s+d.pCost,0);
+  const tAC   = depts.reduce((s,d)=>s+d.aCost,0);
+  const vPct  = pct(tAC, tPC);
+  const hcDiff = tAHC - tPHC;
+
+  document.getElementById('kpis').innerHTML = `
+    <div class="kpi-card">
+      <div class="kpi-label">Planned headcount</div>
+      <div class="kpi-value">${tPHC}</div>
+      <div class="kpi-sub">Roles budgeted this period</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Actual headcount</div>
+      <div class="kpi-value">${tAHC}</div>
+      <div class="kpi-delta ${hcDiff>0?'delta-over':hcDiff<0?'delta-under':'delta-neutral'}">
+        ${hcDiff>0?'▲':hcDiff<0?'▼':''}${hcDiff===0?'On plan':Math.abs(hcDiff)+' vs plan'}
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Planned cost</div>
+      <div class="kpi-value">${fmt(tPC)}</div>
+      <div class="kpi-sub">Annualised headcount budget</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Actual cost</div>
+      <div class="kpi-value">${fmt(tAC)}</div>
+      <div class="kpi-delta ${vPct>0?'delta-over':vPct<0?'delta-under':'delta-neutral'}">
+        ${vPct>0?'▲':vPct<0?'▼':''}${vPct===0?'On plan':Math.abs(vPct)+'% vs plan'}
+      </div>
+    </div>`;
+
+  const maxCost = Math.max(...depts.map(d=>d.aCost));
+  const tbody = document.getElementById('dept-body');
+  tbody.innerHTML = '';
+  depts.forEach(d => {
+    const v = pct(d.aCost, d.pCost);
+    const absV = Math.abs(v);
+    const tier = absV <= 2 ? 'green' : absV <= 8 ? 'amber' : 'red';
+    const barW = Math.round((d.aCost / maxCost) * 100);
+    const label = tier==='green'?'On plan':tier==='amber'?'Watch':'Over';
+    tbody.innerHTML += `<tr>
+      <td class="dept-name">${d.name}</td>
+      <td>${d.planned}</td>
+      <td>${d.actual}</td>
+      <td class="mono">${fmt(d.pCost)}</td>
+      <td>
+        <div class="cost-cell">
+          <div class="bar-track"><div class="bar-fill bar-${tier}" style="width:${barW}%"></div></div>
+          <span class="mono">${fmt(d.aCost)}</span>
+        </div>
+      </td>
+      <td class="${v>0?'var-over':v<0?'var-under':'var-neutral'}">${v>0?'+':''}${v}%</td>
+      <td><span class="badge badge-${tier}">${label}</span></td>
+    </tr>`;
+  });
+
+  const rb = document.getElementById('role-body');
+  rb.innerHTML = '';
+  roles.forEach(r => {
+    const slipped = r.as !== r.ps && r.as !== '—';
+    const open    = r.as === '—';
+    rb.innerHTML += `<tr>
+      <td style="font-weight:500">${r.role}</td>
+      <td style="color:var(--text-secondary);font-size:12px">${r.dept}</td>
+      <td class="mono">${r.ps}</td>
+      <td class="mono" style="color:${open?'var(--red)':slipped?'var(--amber)':'var(--text-primary)'}">${r.as}${slipped?' ↑':''}</td>
+      <td class="mono">${r.pc}</td>
+      <td class="mono">${r.ac}</td>
+      <td class="${r.vc==='neutral'?'var-neutral':r.vc==='open'?'var-over':'var-over'}">${r.v}</td>
+    </tr>`;
+  });
+}
+
+function setTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  ['dept','role','bench'].forEach(t => {
+    document.getElementById('view-'+t).style.display = t===name ? 'block' : 'none';
+  });
+}
+
+render();
+</script>
+</body>
+</html>
